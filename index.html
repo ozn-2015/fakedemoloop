@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en" class=""><head><script>window.livecodes = window.livecodes || {};</script><title>index</title><meta name="title" content="index"><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><style id="__livecodes_styles__"></style><script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.10.0/dist/es-module-shims.js" async=""></script><script type="importmap">{
+  "imports": {}
+}</script></head><body>
+
+
+
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-MFSDVY3L26"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-MFSDVY3L26');
+</script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Fake DemoLoop</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <link rel="manifest" href="/manifest.json">
+
+  <style>
+    /* CSS Styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: white;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      /* CRUCIAL FOR BORDERS: covers the safe area (notch) when possible */
+      min-height: -webkit-fill-available;
+      display: none;
+      background: black;
+      z-index: 999;
+    }
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none; /* Prevents the video itself from receiving touches */
+      background: black;
+      z-index: 1; /* Video is underneath the touch-blocker */
+    }
+    
+    /* CRUCIAL FOR COMMANDS: Invisible and transparent element that intercepts touches */
+    #touch-blocker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000; /* Must be on top of the video */
+      background: transparent;
+      pointer-events: auto; /* Intercepts touches for resetToMenu() */
+    }
+    
+    /* ... (rest of your CSS unchanged) */
+    .content {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      transition: opacity 0.3s ease-in-out;
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 2em;
+      text-shadow: 2px 2px 4px #000000;
+    }
+    .footer {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      text-align: center;
+      z-index: 1;
+    }
+    p.made-by {
+      margin: 0;
+      font-size: 0.8em;
+      color: #aaa;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    p.made-by:hover {
+      color: white;
+    }
+    a.discord-link {
+      display: block;
+      font-size: 0.7em;
+      color: #7289da;
+      text-decoration: none;
+      margin-top: 5px;
+      transition: color 0.3s ease;
+    }
+    a.discord-link:hover {
+      color: #99aab5;
+    }
+    select {
+      background-color: transparent;
+      color: white;
+      border: 1px solid white;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M6 8.5L2 4.5h8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+      cursor: pointer;
+    }
+    select option {
+      background-color: black;
+      color: white;
+    }
+    .divider {
+      background-color: #555;
+      height: 1px;
+      border: none;
+      padding: 0;
+      margin: 5px 0;
+      pointer-events: none;
+    }
+    #confirm-button {
+      background-color: #007aff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #confirm-button:hover {
+      background-color: #0056b3;
+    }
+    #loading-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 1.2em;
+      z-index: 1000;
+      display: none;
+    }
+    #error-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+      z-index: 1001;
+    }
+    #image-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    #image-overlay img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+    }
+
+    /* NEW: buffed-mode checkbox block (placed under confirm as requested) */
+    .buffed-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px; /* small gap per your sketch */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .buffed-row input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      accent-color: #007aff; /* iOS-like blue */
+      cursor: pointer;
+    }
+    .buffed-row label {
+      font-size: 1em;
+      color: white;
+      cursor: pointer;
+    }
+
+  </style>
+
+
+  <div class="video-container" id="video-container">
+    <video muted="" loop="" playsinline="" webkit-playsinline="" preload="auto" id="demo-video" controlslist="nodownload nofullscreen" disablepictureinpicture=""></video>
+    
+    <div id="touch-blocker"></div>
+    
+  </div>
+  
+  <input type="file" id="video-input" accept="video/*" style="display: none;">
+
+  <div class="content" id="main-content">
+    <h1>fake demolooop</h1>
+    <select id="device-select">
+      <option value="">select</option>
+      
+      <option value="local-file">Select video from Gallery</option>
+      <option class="divider" disabled="">— iPhone 17 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/kum5rfogti8l5ktrc0e50/IMG_0031.mp4?rlkey=1dojkgow33ya46wyihhos19tu&amp;st=k3yzmjj9&amp;dl=0">iPhone 17 Pro(orange variant)</option>
+      <option value="https://www.dropbox.com/scl/fi/k6mo2uetusw5vg9z9my0m/17_air_qual.mov?rlkey=8qmy5frfr9273bw29cmtcvw2g&amp;st=qqv26b9v&amp;dl=0">iPhone 17 Air</option>
+      <option value="https://www.dropbox.com/scl/fi/ofrmibonfy9ll1seded6h/IMG_0030.mp4?rlkey=whkcufa0p955xa05ohxlnndrs&amp;st=hkfymxva&amp;dl=0">iPhone 17 Air(second variant)</option>
+      <option value="https://www.dropbox.com/scl/fi/py0aky0pecehi3cdjm7l9/ssstik.io_-Vinus-_1758922798.mp4?rlkey=twutoi2bvffpn79zhlkfhptgt&amp;st=qks72z9b&amp;dl=0">iPhone 17 Pro</option>
+      <option value="https://www.dropbox.com/scl/fi/c44y3x6og7co91qmw79oh/17.mov?rlkey=v09msdtqe7fbhkv7g2q5y8b7r&amp;st=g9nbao5n&amp;dl=0">iPhone 17</option>
+        
+      <option class="divider" disabled="">— iPhone 16 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/9n7zh42u1kwqcttix4azy/16_qual.mov?rlkey=5e6chxfx3nw1itkmplh6r2acu&amp;st=mkywp7ag&amp;dl=0">iPhone 16</option>
+      <option value="https://www.dropbox.com/scl/fi/6anzv0ksngf6aqx2bac89/VID_2025111380114322-PM-2.MP4?rlkey=dzay77yu2fjpfsq9an7reyxar&amp;st=wecfkq7h&amp;dl=0">iPhone 16(italian)</option>
+      <option value="https://www.dropbox.com/scl/fi/ki4j0x48ydi43q6algch2/ScreenRecording_10-12-2025-8-45-37-PM_1.mov?rlkey=iuzua2f461iatm4uc2vytn9m5&amp;st=zv4s3r4f&amp;dl=0">iPhone 16 Pro</option>
+      <option value="https://www.dropbox.com/scl/fi/qgx7qbkgpu10409xhgxfj/iphone16plus.mp4?rlkey=4d8pm4sou7z57fgl1ugfqpg1k&amp;st=o8hsxb80&amp;dl=0">iPhone 16 Plus</option>
+      <option value="https://www.dropbox.com/scl/fi/euwncuyj6rp8r0zg9gr32/iPhone-16e-ScreenSaver-1080P_60FPS.mov?rlkey=d7zxnxsm8eytb7c3ryi56vjqt&amp;st=h7gaj3xl&amp;dl=0">iPhone 16e</option>
+      <option value="https://www.dropbox.com/scl/fi/ppjq1pgh52tg9bfb8tqhd/ScreenRecording_01-26-2025_12-35-59_pm_1.mov?rlkey=x5c6lsm6kg8yg12uihy7ezjuv&amp;st=rpl2a5d8&amp;dl=0">iPhone 16 Pro Max</option>
+      
+      <option class="divider" disabled="">— iPhone 15 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/sui9zvpfh67xw9uibc2jk/Iphone15.mp4?rlkey=uqyfh202rcpe33p4ozce7v8qc&amp;st=n6jez4c1&amp;dl=0">iPhone 15</option>
+      <option value="https://www.dropbox.com/scl/fi/sey0i00qplawh7zss31q8/iphone15plus.MP4?rlkey=bu3760gz79q2c0pghrs1v3002&amp;st=j9mooo3i&amp;dl=0">iPhone 15 Plus</option>
+      <option value="https://www.dropbox.com/scl/fi/5yc3rar7jd6x24j51ek4w/iphone15pro.MP4?rlkey=8zwp6dr2b25p6ganjkad0qd99&amp;st=vyecg5e4&amp;dl=0">iPhone 15 Pro</option>
+      <option value="https://www.dropbox.com/scl/fi/4jfcbx4l05bpk3zwcl9ar/iphone15promax.mp4?rlkey=yg8zq6alkv4yu0to62hm1ppzp&amp;st=qs4yurxw&amp;dl=0">iPhone 15 Pro Max(unofficial)</option>
+      
+      <option class="divider" disabled="">— iPhone 14 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/7op2gb1zli2egwubo6sp3/iPhone-14-Screensaver-Portrait-1080p60-1080P_60FPS.mp4?rlkey=8610pc3nnj3kylgdrxw6kz3bj&amp;st=9ramss8r&amp;dl=0">iPhone 14</option>
+      <option value="https://www.dropbox.com/scl/fi/1nuwkn503aljsprrux5ds/Loop-Iphone14plus.mp4?rlkey=1e4uy84629kb2hxarwqfji9el&amp;st=plk3k0zp&amp;dl=0">iPhone 14 Plus</option>
+      <option value="https://www.dropbox.com/scl/fi/noz4218trwjmzo8ty0dxm/iphone14pro.mp4?rlkey=o7iljuhiua9fhe6uf4ql8prui&amp;st=2jj1mxpq&amp;dl=0">iPhone 14 Pro</option>
+      <option value="https://www.dropbox.com/scl/fi/qefm1a49vdle10tkrs7eg/iphone14promax.MP4?rlkey=1buxqg3muyj34b8wx51l3xvl2&amp;st=x763pv3g&amp;dl=0">iPhone 14 Pro Max</option>
+      
+      <option class="divider" disabled="">— iPhone SE —</option>
+      <option value="https://www.dropbox.com/scl/fi/wr82fpkyu95g1w3xzulqf/Loop-Iphonese.mp4?rlkey=h78p0mj3cporag050re5828iz&amp;st=0jt68auk&amp;dl=0">iPhone SE</option>
+      
+      <option class="divider" disabled="">— iPhone 13 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/md5fhd3nwl638tdlnvfdf/iphone13.MP4?rlkey=w72388x8j1gzxqpex1b1dp5z4&amp;st=ag7qsge1&amp;dl=0">iPhone 13</option>
+      <option value="https://www.dropbox.com/scl/fi/b32migv6zg9gg4edkjd6j/video-output-C9E582FC-96E6-4D39-B7B3-374FC80EA627-2.MP4?rlkey=zid6hkeggj6wga0d0t1g3ddjt&amp;st=ic4hvsib&amp;dl=0">iPhone 13 mini(unofficial)</option>
+      <option value="https://www.dropbox.com/scl/fi/i4u7nphmboyfypb9ckban/Loop-Iphone13promax.mp4?rlkey=8rn6n9takt0ipl0xxfs45rgp7&amp;st=z0eb4q2q&amp;dl=0">iPhone 13 Pro Max</option>
+      
+      <option class="divider" disabled="">— iPhone 12 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/o4m8uxnqehr5318zlp4lr/iphone12.MP4?rlkey=5dfat11wwhbk7gu63hnnsgguv&amp;st=t4ebcuin&amp;dl=0">iPhone 12</option>
+      <option value="https://www.dropbox.com/scl/fi/nfjye6772h1fozxlh8964/12-mini-trimmed.ia.mp4?rlkey=wxjc3zonychxee88ev9nail0z&amp;st=8oa1zdq1&amp;dl=0">iPhone 12 mini</option>
+      <option value="https://www.dropbox.com/scl/fi/h14w1sbcv5403lijfg27v/12-pm-trimmed.ia.mp4?rlkey=ccm9cl3jp8dqp1snf56h5b07l&amp;st=ydmgfgop&amp;dl=0">iPhone 12 Pro Max</option>
+      
+      <option class="divider" disabled="">— iPhone 11 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/xucy3kgzb505k3u0aglze/iphone11.mp4?rlkey=ugz7sdz6voa58633dl33xo8l9&amp;st=dbrxqyqi&amp;dl=0">iPhone 11</option>
+      <option value="https://www.dropbox.com/scl/fi/d3aq8r9cb9rbtfv7hm0b2/iphone11pro.mp4?rlkey=x5v4n0e6zlnuuzxnp46n4b9is&amp;st=9s2cppeg&amp;dl=0">iPhone 11 Pro</option>
+      
+      <option class="divider" disabled="">— iPhone X/XS/XR Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/i4fxptfzw7p2w6mbib0if/IPHONE-X.mp4?rlkey=zrjqscaviykwhy6vkrfcyk4wi&amp;st=jfhn5hzj&amp;dl=0">Iphone X</option>
+      <option value="https://www.dropbox.com/scl/fi/hbqq46w32nc3cahr3huxs/Loop-Iphonexs.mp4?rlkey=0bisuu9f20j91f5ml8ecjrk7i&amp;st=n4tpv195&amp;dl=0">iPhone XS (unofficial)</option>
+      <option value="https://www.dropbox.com/scl/fi/b82zm4y0laf2ebpwqsk0d/Loop-Iphonexr.mp4?rlkey=h4vqniprg1jih39is1oe59k5n&amp;st=l0xac4yy&amp;dl=0">iPhone XR</option>
+      <option value="https://www.dropbox.com/scl/fi/m5ota0jk4qnrbvt5arxoo/Loop-Iphonexsmax.mp4?rlkey=46ff8xudngcenqn2qljhjfbr7&amp;st=hvl36yfc&amp;dl=0">iPhone XS Max</option>
+      
+      <option class="divider" disabled="">— iPhone 8/7 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/1u51hh5flwfvpg1zccvwe/Loop-Iphone8.mp4?rlkey=33vrpxonpy3d2vc2328em6dyw&amp;st=lavkr61i&amp;dl=0">iPhone 8</option>
+      <option value="https://www.dropbox.com/scl/fi/wlr5eebv9pp5q9db85itg/Loop-Iphone8plus.mp4?rlkey=p74evpstwluflfy0qh5nu5rev&amp;st=nsy9uolz&amp;dl=0">iPhone 8 Plus</option>
+      <option value="https://www.dropbox.com/scl/fi/dmspsj0sa8s00wrijf72k/Loop-Iphone7.mp4?rlkey=55u26t8mdxhw52ivixg4iid31&amp;st=si0jvomy&amp;dl=0">iPhone 7</option>
+      <option value="https://www.dropbox.com/scl/fi/zb93xbveo4wmm7bmt8bea/iPhone-7-plus.MP4?rlkey=x0pqdqf5t19h0ma0b3guuoa3h&amp;st=hb7r7k72&amp;dl=0">iPhone 7 Plus</option>
+      
+      <option class="divider" disabled="">— iPhone 6 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/4klixlddmjsk1b42nkpqf/Loop-Iphone6s.mp4?rlkey=0whpbfwxve6ab1y3sl4l8w1vn&amp;st=ru0mvomy&amp;dl=0">iPhone 6s</option>
+      <option value="https://www.dropbox.com/scl/fi/2x6k7una8alx5j9j8odta/Loop-Iphone6.mp4?rlkey=r1v1gnob79i2v0yveqq9fk97u&amp;st=vmfkvh6t&amp;dl=0">iPhone 6</option>
+      
+      <option class="divider" disabled="">— iPhone 5 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/su8p9jxtefup1yrq6jwz3/iPhone-5-demoloop.mp4?rlkey=1ntkh2uubb2eipvap01esuf4q&amp;st=ni64kskt&amp;dl=0">iPhone 5</option>
+      <option value="https://www.dropbox.com/scl/fi/pbr2t024l8g7lquz7yjto/Loop-Iphone5s.mp4?rlkey=d3eyuzajhwh7dtfmk712d2nvs&amp;st=qrwoskdz&amp;dl=0">iPhone 5s</option>
+      <option value="https://www.dropbox.com/scl/fi/m9h1gg4wuyt2cov3guota/iPhone-5C.mp4?rlkey=2sn3mpzy9gipb007d92qcw3fe&amp;st=r95rqh2q&amp;dl=0">iPhone 5c</option>
+      
+      <option class="divider" disabled="">— iPhone 4 Series —</option>
+      <option value="https://www.dropbox.com/scl/fi/cqm86z9vlf9t0sapjk27d/iPhone4.mp4?rlkey=4ae6gurhfzhoae2pq4alldi5u&amp;st=x8n9amto&amp;dl=0">iPhone 4</option>
+      <option value="https://www.dropbox.com/scl/fi/0ne8jswwj0psbv2znift5/iPhone4S-5.x.mp4?rlkey=gehcw74a2z480za4pst3soo27&amp;st=3dtctiuo&amp;dl=0">iPhone 4s</option>
+      
+      <option class="divider" disabled="">— iPhone 3G/3GS —</option>
+      <option value="https://www.dropbox.com/scl/fi/sh8uss3kqc1dou74jx1s6/iPhone3GS.mp4?rlkey=5hu0iiz4pip1q8zv2al6y96zg&amp;st=fb9luoou&amp;dl=0">iPhone 3GS</option>
+    <option value="https://www.dropbox.com/scl/fi/vbor0nnrpr1gat76uzmjy/3gs-christmas.mp4?rlkey=l3hl3xyah7b14x2v9wcqfga8w&st=rz242601&dl=0">iPhone 3GS christmas</option>
+        <option value="https://www.dropbox.com/scl/fi/s7el14xf70wpx193j9ii2/iPhone3G.mp4?rlkey=7hiccabyis4w7fje3bw9y76ig&amp;st=4tswzgoj&amp;dl=0">iPhone 3G</option>
+      
+      <option class="divider" disabled="">— iPhone 2G —</option>
+      <option value="https://www.dropbox.com/scl/fi/iwfu9zdjeyx7qpcwbfzli/iPhone-2G.mp4?rlkey=rrxnibe1iwqz3t4g2fj3zfrkz&amp;st=uf95y729&amp;dl=0">iPhone 2G</option>
+      
+      <option class="divider" disabled="">— iPad Videos —</option>
+      <option value="https://www.dropbox.com/scl/fi/ntbll9d3i5gmi4iw65qd0/Loop-Ipadair.mp4?rlkey=i5xwdexq7xaf3b71aqltk5c1e&amp;st=6a29c384&amp;dl=0">iPad Air</option>
+      <option value="https://www.dropbox.com/scl/fi/3wg1xn3elzzll2c46beyf/Loop-Ipadpro2022.mp4?rlkey=kuhn6ow4f9xfyef31y9365v8u&amp;st=toa6xjqk&amp;dl=0">iPad Pro 2022</option>
+      <option value="https://www.dropbox.com/scl/fi/do4l45554big5fthh2zza/Loop-Ipadpro2016.mp4?rlkey=f0jhkzll4nerkvpyfp87ctdfb&amp;st=4lw7fvku&amp;dl=0&gt;iPad Pro 2016&lt;/option&gt;
+      &lt;option value=" https:="" www.dropbox.com="" scl="" fi="" 21h0l7autjpopyfyiqvkn="" loop-ipadpro3.mp4?rlkey="ae3p2og6y9nr1yjd8fll31jzg&amp;st=4fkwsl6n&amp;dl=0&quot;">iPad Pro 3</option>
+      <option value="https://www.dropbox.com/scl/fi/y1i9ahl7ou7csqx06mxcz/iPad-mini-iOS-6.mp4?rlkey=11oi1y2prroirihxjznukw1f5&amp;st=rwjk7r6j&amp;dl=0">iPad mini (iOS 6)</option>
+      <option value="https://www.dropbox.com/scl/fi/qhybmvnseswmgdgtqemr2/Loop-Ipad2021.mp4?rlkey=yi05d06ad2q70ayfguer9we84&amp;st=ig43kcyi&amp;dl=0">iPad 2021</option>
+      <option value="https://www.dropbox.com/scl/fi/bh2t4wklfjq8w074gggwb/Loop-Ipad2016.mp4?rlkey=qa6u7jnfze088k9i70mjw3764&amp;st=4xqgk1kv&amp;dl=0">iPad 2016</option>
+      <option value="https://www.dropbox.com/scl/fi/n67tnc55pfwj0p3hajur5/Loop-Ipad10.mp4?rlkey=fszqubzs6dzhq5lwqkl36ka&amp;st=4j59cy7e&amp;dl=0">iPad 10</option>
+      <option value="https://www.dropbox.com/scl/fi/d6vek6gd1a7ehozk6sxg2/iPad-2-retail-demo-video-iOS-5.mp4?rlkey=cv7s6qhs91dk2ipeawp6y9wgm&amp;st=3m8k9zcc&amp;dl=0">iPad 2</option>
+    
+      <option class="divider" disabled="">— MacBook Videos —</option>
+      <option value="https://www.dropbox.com/scl/fi/eq52rl9q2pctwmioymfup/macbookpro2023.mp4?rlkey=ly9rqe4pvdkrnmsfua7fsqy5f&amp;st=b8bljrvg&amp;dl=0">MacBook Pro 2023</option>
+    <option value="https://www.dropbox.com/scl/fi/chr9k6p8k5ddyfgw581lf/big-sur-macbook-demo.mp4?rlkey=ox81mfxm5ejwqs11uw0n3pfwm&amp;st=343pruo5&amp;dl=0">MacBook pro 16 retina</option>
+          <option value="https://www.dropbox.com/scl/fi/qhodnuo3olxsr4qsmca4k/macbook-pro-16-retina.mp4?rlkey=4tarubyqvz8dpuhjeb1czquiw&amp;st=wair8b7b&amp;dl=0">(MacBook Big Sur Demo)</option>
+      <option value="https://www.dropbox.com/scl/fi/bu9fdwkku3juo4li2kqx2/GENERIC-MACBOOK-DEMO-VIDEO.mp4?rlkey=0n25jkys023eaczpvy7o52ikv&amp;st=6gbttmbz&amp;dl=0">Generic MacBook Demoloop</option>
+      <option value="https://www.dropbox.com/scl/fi/htk0hdk9gf62vs4wcvidz/macbook-multitasking-ad-Realizzato-con-Clipchamp.mp4?rlkey=z8wgnt9qd1rzvrm1t9drq8ztt&amp;st=53r5rw8m&amp;dl=0">MacBook Air (Multitasking Ad)</option>
+      <option value="https://www.dropbox.com/scl/fi/jrrs8gkx56kj1vgkio9sj/macbook-air.mp4?rlkey=yq58kh6433svzugeqtnc5ctll&amp;st=sk55jfq6&amp;dl=0">MacBook Air Demo Video</option>
+      
+      <option class="divider" disabled="">— iOS/iPod Videos —</option>
+      <option value="https://www.dropbox.com/scl/fi/41l77jc19ldgk2bmpztrw/Loop-Iphoneios15.mp4?rlkey=0affa3lrtrq8nz9c71gr9mxqw&amp;st=k4aup8x3&amp;dl=0">iOS 15</option>
+      <option value="https://www.dropbox.com/scl/fi/xu17bmzq4pcy0pjognsqe/ios-14.mp4?rlkey=eliq9luedlkpfow3zoetew21e&amp;st=v6vzhr1d&amp;dl=0">Ipod Touch generic</option>
+      <option value="https://www.dropbox.com/scl/fi/9qixr9jn7vcnv3xfxwylm/ios-13-new-demo.mp4?rlkey=lp4wjk4wli3fvgyh1s0f56pnd&amp;st=a65mq26u&amp;dl=0">iOS 13</option>
+       <option value="https://www.dropbox.com/scl/fi/jpriraggg4506xkwof41w/apple-eco-screen-saver.mp4?rlkey=h02va57jrqzxvy5zn23phhani&amp;st=e9ihb9ps&amp;dl=0">Apple eco demoloop</option>
+      <option value="https://www.dropbox.com/scl/fi/6uxmdq7tef7dfkob7bwtd/Loop-Ipod4.mp4?rlkey=s0foi5nqpqbgo28bv8eo0f1yr&amp;st=g3tdqtgl&amp;dl=0">iPod touch 4G</option>
+      <option value="https://www.dropbox.com/scl/fi/biht129d61uvh1wel6uph/ipod-portrait.mp4?rlkey=amwh9trnddxqeem3ag5sg2pw5&amp;st=5cl21jfi&amp;dl=0">iPod touch portrait</option>
+      <option value="https://www.dropbox.com/scl/fi/mjy4r2gx60ilmd8x21gyg/Loop-Applearcade.mp4?rlkey=rmog49u795hlnpjcvnr4vetli&amp;st=nl0yafrs&amp;dl=0">Apple Arcade</option>
+    </select>
+    <button id="confirm-button">Confirm</button>
+
+    <!-- NEW: buffed mode UI (placed directly under Confirm as requested) -->
+    <div class="buffed-row" id="buffed-row">
+      <input type="checkbox" id="buffed-checkbox">
+      <label for="buffed-checkbox">Buffed Mode</label>
+    </div>
+
+  </div>
+  
+  <div id="loading-message">Loading...</div>
+  <div id="error-message"></div>
+
+  <div class="footer">
+    <p class="made-by" id="made-by-text">made by:catwithabaloon</p>
+    <a href="https://discord.com/invite/HSEsGp5fzs" class="discord-link" target="_blank">Discord</a>
+  </div>
+
+  <div id="image-overlay">
+    <img src="icons/cat-balloon.png" alt="Cat with a balloon">
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const madeByText = document.getElementById('made-by-text');
+      const imageOverlay = document.getElementById('image-overlay');
+      const videoContainer = document.getElementById('video-container');
+      const videoElement = document.getElementById('demo-video');
+      const selectElement = document.getElementById('device-select');
+      const confirmButton = document.getElementById('confirm-button');
+      const contentElement = document.querySelector('.content');
+      const errorMessage = document.getElementById('error-message');
+      const footerElement = document.querySelector('.footer');
+      const loadingMessage = document.getElementById('loading-message');
+      const videoInput = document.getElementById('video-input');
+      const touchBlocker = document.getElementById('touch-blocker');
+      const buffedCheckbox = document.getElementById('buffed-checkbox');
+
+      let currentVideo = videoElement;
+      let isLoading = false;
+      let isLocalFile = false;
+
+      // Buffed mode state & storage keys
+      const STORAGE_KEYS = {
+        BUFFED: 'demoloop_buffed_mode',
+        LAST_VIDEO: 'demoloop_last_video',
+        LAST_VIDEO_IS_LOCAL: 'demoloop_last_video_is_local'
+      };
+
+      // Tap handling for single vs double
+      let lastTap = 0;
+      let singleTapTimer = null;
+      const DOUBLE_TAP_DELAY = 300; // ms
+
+      // --- Fullscreen Functions ---
+      function enterFullscreen() {
+          const docElm = document.documentElement;
+          if (docElm.requestFullscreen) {
+              docElm.requestFullscreen();
+          } else if (docElm.webkitRequestFullScreen) {
+              docElm.webkitRequestFullScreen();
+          }
+      }
+
+      function exitFullscreen() {
+          if (document.exitFullscreen) {
+              document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+          }
+      }
+
+      function hideStatusBar() {
+        const metaTag = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+        if (metaTag) {
+          metaTag.setAttribute('content', 'black-translucent');
+        }
+      }
+
+      function showStatusBar() {
+        // placeholder
+      }
+      // --- End Fullscreen Functions ---
+      
+      function resetToMenu() {
+        isLoading = false;
+        isLocalFile = false;
+        
+        if (currentVideo) {
+          currentVideo.pause();
+          if (currentVideo.src && currentVideo.src.startsWith('blob:')) {
+            try { URL.revokeObjectURL(currentVideo.src); } catch(e){}
+          }
+          currentVideo.removeAttribute('src');
+          currentVideo.srcObject = null;
+          try { currentVideo.load(); } catch(e){}
+          currentVideo.currentTime = 0;
+        }
+        
+        exitFullscreen();
+        showStatusBar();
+        
+        videoContainer.style.display = 'none';
+        loadingMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+        contentElement.style.display = 'flex';
+        footerElement.style.display = 'block';
+        
+        // When resetting to menu via resetToMenu we also clear the selected option
+        selectElement.value = '';
+      }
+
+      function showError(message) {
+        isLoading = false;
+        loadingMessage.style.display = 'none';
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        
+        setTimeout(function() {
+          resetToMenu();
+        }, 3000);
+      }
+      
+      function loadAndPlayVideo(videoSource) {
+        if (isLoading) return;
+        
+        isLoading = true;
+        
+        contentElement.style.display = 'none';
+        footerElement.style.display = 'none';
+        loadingMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+        
+        currentVideo.pause();
+        if (currentVideo.src && currentVideo.src.startsWith('blob:')) {
+            try { URL.revokeObjectURL(currentVideo.src); } catch(e){}
+        }
+        currentVideo.removeAttribute('src');
+        currentVideo.srcObject = null;
+        try { currentVideo.load(); } catch(e){}
+        currentVideo.currentTime = 0;
+        
+        const videoToLoad = currentVideo;
+        
+        let finalUrl = '';
+        if (isLocalFile) {
+            finalUrl = videoSource;
+        } else {
+            // Dropbox Link Conversion for direct download and Cache Busting
+            finalUrl = videoSource.replace('&dl=0', '&raw=1') + '&t=' + Date.now();
+        }
+
+        const onLoadedData = function() {
+          console.log('Video loaded:', finalUrl);
+          
+          loadingMessage.style.display = 'none';
+          videoContainer.style.display = 'block';
+          
+          hideStatusBar();
+          
+          videoToLoad.currentTime = 0;
+          
+          // Removes the HTML attribute that shows controls (double safety)
+          videoToLoad.removeAttribute('controls');
+          
+          videoToLoad.play().then(function() {
+            isLoading = false;
+            console.log('Playback started');
+            enterFullscreen();
+          }).catch(function(error) {
+            console.error('Playback error:', error);
+            if (error.name === "NotAllowedError" || error.name === "NotSupportedError") {
+                 console.warn("Playback blocked by browser policy, waiting for user interaction.");
+            } else {
+                 showError('Playback Error: ' + error.message);
+            }
+          });
+          
+          videoToLoad.removeEventListener('loadeddata', onLoadedData);
+          videoToLoad.removeEventListener('error', onError);
+        };
+
+        const onError = function(e) {
+          console.error('Video loading error:', e);
+          videoToLoad.removeEventListener('loadeddata', onLoadedData);
+          videoToLoad.removeEventListener('error', onError);
+          showError('Unable to load video. It might not be a direct video file or the link has expired.');
+        };
+
+        videoToLoad.addEventListener('loadeddata', onLoadedData);
+        videoToLoad.addEventListener('error', onError);
+
+        videoToLoad.src = finalUrl;
+        try { videoToLoad.load(); } catch(e){}
+      }
+
+      // NEW: prefetch/warm-up helper to reduce visible loading on startup
+      async function prefetchWarmUp(originalUrl) {
+        // If URL is a Dropbox link with dl=0, convert as elsewhere
+        const url = (originalUrl || '').replace('&dl=0', '&raw=1') || '';
+        if (!url) throw new Error('No URL');
+
+        // Try Cache Storage first
+        try {
+          if ('caches' in window) {
+            const cacheName = 'demoloop-video-cache-v1';
+            const cache = await caches.open(cacheName);
+            // Try to match
+            const cachedResponse = await cache.match(url);
+            if (cachedResponse) {
+              // Found in cache
+              const blob = await cachedResponse.blob();
+              return URL.createObjectURL(blob);
+            } else {
+              // Fetch and put in cache (use CORS mode)
+              const response = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+              if (!response.ok) throw new Error('Network response not ok: ' + response.status);
+              // Clone for cache and blob creation
+              const respClone = response.clone();
+              await cache.put(url, respClone);
+              const blob = await response.blob();
+              return URL.createObjectURL(blob);
+            }
+          } else {
+            // No caches support: simply fetch and return blob URL
+            const response = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+            if (!response.ok) throw new Error('Network response not ok: ' + response.status);
+            const blob = await response.blob();
+            return URL.createObjectURL(blob);
+          }
+        } catch (err) {
+          console.warn('Prefetch failed for', url, err);
+          throw err;
+        }
+      }
+
+      // Save buffed mode setting to localStorage
+      function setBuffedMode(enabled) {
+        try {
+          localStorage.setItem(STORAGE_KEYS.BUFFED, enabled ? '1' : '0');
+        } catch (e) {
+          console.warn('Could not persist buffed mode', e);
+        }
+      }
+
+      function getBuffedMode() {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.BUFFED) === '1';
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // Save the last video (string url). For local file we store a blob URL only for current session.
+      function saveLastVideo(url, localFlag) {
+        try {
+          localStorage.setItem(STORAGE_KEYS.LAST_VIDEO, url || '');
+          localStorage.setItem(STORAGE_KEYS.LAST_VIDEO_IS_LOCAL, localFlag ? '1' : '0');
+        } catch (e) {
+          console.warn('Could not persist last video', e);
+        }
+      }
+
+      function getLastVideo() {
+        try {
+          return {
+            url: localStorage.getItem(STORAGE_KEYS.LAST_VIDEO) || '',
+            isLocal: localStorage.getItem(STORAGE_KEYS.LAST_VIDEO_IS_LOCAL) === '1'
+          };
+        } catch (e) {
+          return { url: '', isLocal: false };
+        }
+      }
+
+      // Initialize buffed checkbox from storage
+      buffedCheckbox.checked = getBuffedMode();
+
+      // When page loads, if buffed mode is enabled and there's a last video, auto-play it
+      // UPDATED: show only a black screen at startup in buffed mode; do not show "Loading..." or selection.
+      (function tryAutoPlayIfBuffed() {
+        const buffed = getBuffedMode();
+        const last = getLastVideo();
+
+        if (buffed && last.url) {
+          // Show only the black video container (no texts) immediately
+          contentElement.style.display = 'none';
+          footerElement.style.display = 'none';
+          loadingMessage.style.display = 'none'; // ensure loading message hidden
+          errorMessage.style.display = 'none';
+          videoContainer.style.display = 'block';
+          hideStatusBar();
+
+          // Attempt to warm-up/play silently. If it works, video will appear.
+          // If it fails, remain on black screen; user can double-tap to open selection.
+          if (!last.isLocal && last.url) {
+            // Try prefetch to create a blob URL for smoother start
+            prefetchWarmUp(last.url).then(function(blobUrl) {
+              // Use the blob url in this session for playback
+              isLocalFile = true;
+              saveLastVideo(blobUrl, true);
+              try {
+                currentVideo.pause();
+                if (currentVideo.src && currentVideo.src.startsWith('blob:')) {
+                  try { URL.revokeObjectURL(currentVideo.src); } catch(e){}
+                }
+                currentVideo.removeAttribute('src');
+                currentVideo.srcObject = null;
+                currentVideo.src = blobUrl;
+                currentVideo.load();
+                // Try to autoplay; if browser blocks it, we silently ignore
+                currentVideo.play().then(function() {
+                  enterFullscreen();
+                  isLoading = false;
+                }).catch(function(err) {
+                  // Silent fallback: stay on black screen (do NOT show the Loading UI)
+                  console.warn('Autoplay blocked after prefetch:', err);
+                  isLoading = false;
+                });
+              } catch (e) {
+                console.warn('Silent play failed after prefetch:', e);
+                isLoading = false;
+              }
+            }).catch(function(err) {
+              // Prefetch failed: try to set src directly but still keep UI silent (black)
+              console.warn('Prefetch failed, attempting direct load silently:', err);
+              try {
+                isLocalFile = false;
+                currentVideo.pause();
+                currentVideo.removeAttribute('src');
+                currentVideo.srcObject = null;
+                // set direct URL (no &t cachebuster here to keep URL stable)
+                currentVideo.src = last.url.replace('&dl=0', '&raw=1');
+                currentVideo.load();
+                currentVideo.play().then(function() {
+                  enterFullscreen();
+                  isLoading = false;
+                }).catch(function(playErr) {
+                  // Still blocked: remain on black screen silently
+                  console.warn('Direct autoplay blocked:', playErr);
+                  isLoading = false;
+                });
+              } catch (e2) {
+                console.warn('Silent direct load failed:', e2);
+                isLoading = false;
+              }
+            });
+          } else if (last.isLocal && last.url && last.url.startsWith('blob:')) {
+            // Local blob available in this session: use it silently
+            try {
+              isLocalFile = true;
+              currentVideo.pause();
+              currentVideo.removeAttribute('src');
+              currentVideo.srcObject = null;
+              currentVideo.src = last.url;
+              currentVideo.load();
+              currentVideo.play().then(function() {
+                enterFullscreen();
+                isLoading = false;
+              }).catch(function(err) {
+                console.warn('Autoplay local blob blocked:', err);
+                isLoading = false;
+              });
+            } catch (e) {
+              console.warn('Silent local playback failed:', e);
+              isLoading = false;
+            }
+          } else {
+            // No usable last video (or blob expired) — stay on black screen until user double-taps to open menu
+            isLoading = false;
+          }
+        } else {
+          // Normal startup if buffed is off or no last video
+          resetToMenu();
+        }
+      })();
+
+      confirmButton.addEventListener('click', function() {
+        const selectedValue = selectElement.value;
+        
+        if (!selectedValue) {
+          showError('Please select a device');
+          return;
+        }
+
+        if (selectedValue === 'local-file') {
+            videoInput.click();
+        } else {
+            isLocalFile = false;
+            loadAndPlayVideo(selectedValue);
+
+            // store last video if buffed mode is on
+            if (buffedCheckbox.checked) {
+              saveLastVideo(selectedValue, false);
+            } else {
+              // If not buffed, still update last video so when user enables buffed later it's ok
+              saveLastVideo(selectedValue, false);
+            }
+        }
+      });
+
+      // When user picks a local file we create an objectURL and play it.
+      videoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const videoUrl = URL.createObjectURL(file);
+          isLocalFile = true;
+          loadAndPlayVideo(videoUrl);
+
+          // Save last video as local (note: blob: URLs may not persist across restarts, but we store what we can)
+          saveLastVideo(videoUrl, true);
+
+        } else {
+           resetToMenu();
+        }
+        e.target.value = '';
+      });
+
+      // Checkbox handler: store preference
+      buffedCheckbox.addEventListener('change', function() {
+        setBuffedMode(buffedCheckbox.checked);
+        // If user enabled buffed AND a video is currently playing, make sure last video is saved
+        if (buffedCheckbox.checked && currentVideo && (currentVideo.src || currentVideo.srcObject)) {
+          const last = getLastVideo();
+          if (!last.url) {
+            saveLastVideo(currentVideo.src || '', isLocalFile);
+          }
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && (videoContainer.style.display === 'block' || document.fullscreenElement)) {
+          resetToMenu();
+        }
+      });
+
+      // touch-blocker click/doubletap handling (buffed single tap ignored, double tap -> menu)
+      touchBlocker.addEventListener('click', function(ev) {
+        const buffed = getBuffedMode();
+
+        const now = Date.now();
+        const timeSince = now - lastTap;
+        lastTap = now;
+
+        if (singleTapTimer) {
+          // a previous single-tap was waiting — this is a double-tap
+          clearTimeout(singleTapTimer);
+          singleTapTimer = null;
+          // Double tap detected -> open selection (resetToMenu)
+          resetToMenu();
+          return;
+        }
+
+        // start single-tap timer to differentiate from double
+        singleTapTimer = setTimeout(function() {
+          singleTapTimer = null;
+
+          if (!buffed) {
+            // normal behavior: single tap goes to menu
+            resetToMenu();
+          } else {
+            // buffed mode: DO NOTHING on single tap (user requested)
+          }
+        }, DOUBLE_TAP_DELAY);
+      });
+
+      madeByText.addEventListener('click', function() {
+        imageOverlay.style.display = 'flex';
+      });
+
+      imageOverlay.addEventListener('click', function() {
+        imageOverlay.style.display = 'none';
+      });
+
+      document.addEventListener('visibilitychange', function() {
+        if (currentVideo && videoContainer.style.display === 'block') {
+          if (document.hidden) {
+            currentVideo.pause();
+          } else {
+            currentVideo.play().catch(console.error);
+          }
+        }
+      });
+        
+      window.addEventListener('pagehide', function() {
+        // On pagehide we'll if buffed mode is enabled we have already saved the last video when it was selected.
+        if (currentVideo) {
+          currentVideo.pause();
+          if (currentVideo.src && currentVideo.src.startsWith('blob:')) {
+            try { URL.revokeObjectURL(currentVideo.src); } catch(e){}
+          }
+          currentVideo.removeAttribute('src');
+          currentVideo.srcObject = null;
+          try { currentVideo.load(); } catch(e){}
+          currentVideo.currentTime = 0;
+        }
+      });
+
+      // When loading a new video through loadAndPlayVideo we saved lastVideo above when appropriate.
+      // But also save lastVideo on successful playback start to be safer.
+      videoElement.addEventListener('play', function() {
+        // Save last video if buffed is enabled
+        if (getBuffedMode()) {
+          const last = getLastVideo();
+          const srcNow = videoElement.src || '';
+          if (srcNow && last.url !== srcNow) {
+            saveLastVideo(srcNow, isLocalFile);
+          }
+        }
+      });
+
+      // Also apply saved buffed state to checkbox in case storage changed elsewhere
+      window.addEventListener('storage', function(e) {
+        if (e.key === STORAGE_KEYS.BUFFED) {
+          buffedCheckbox.checked = getBuffedMode();
+        }
+      });
+
+    });
+  </script>
+
+
+<script></script></body></html>
